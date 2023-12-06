@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Geographical Map with Custom Image Marker</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  <!-- Leaflet Icon Angle Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.js"></script>
+</head>
+<body>
+
+<div id="map" style="height: 500px;"></div>
+<button onclick="moveMarker()">Move Marker</button>
+
+<script>
+  var map;
+  var marker;
+
+  function initMap() {
+    // Coordinates (initial and final)
+    var initialLat = 44;
+    var initialLon = -68;
+    var finalLat = 44.5;
+    var finalLon = -69;
+
+    // Create the map centered at the initial coordinates
+    map = L.map('map').setView([initialLat, initialLon], 10);
+
+    // Add a tile layer (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Image URL
+    var imageUrl = '/home/mehr/Desktop/geo_generators_visualization/js/3_custom_arrow/arrow1.png';
+
+    // Create a marker with the icon angle plugin and add it to the map
+    marker = L.marker([initialLat, initialLon], {
+      icon: L.icon({
+        iconUrl: imageUrl,
+        iconSize: [40, 40], // Adjust the size as needed
+        iconAnchor: [20, 20] // Center point of the icon
+      }),
+      rotationAngle: 28 // Initial rotation angle
+    }).addTo(map);
+  }
+
+  // Function to move the marker to a new position
+  function moveMarker() {
+    marker.setLatLng([44.5, -69]); // Set new position without changing angle
+    marker.update(); // Update the marker
+    map.panTo([44.5, -69]); // Center map to the new position
+  }
+
+  // Initialize the map
+  initMap();
+</script>
+
+</body>
+</html>
+

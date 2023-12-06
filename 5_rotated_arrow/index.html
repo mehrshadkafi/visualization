@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Geographical Map with Custom Image Marker</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="map" style="height: 500px;"></div>
+
+<script>
+  // Coordinates (latitude and longitude)
+  var lat = 44;
+  var lon = -68;
+
+  // Create the map centered at the specified coordinates
+  var map = L.map('map').setView([lat, lon], 10);
+
+  // Add a tile layer (OpenStreetMap)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  // Image URL
+  var imageUrl = '/home/mehr/Desktop/geo_generators_visualization/js/3_custom_arrow/arrow1.png';
+
+  // Create a marker and add it to the map
+  var marker = L.marker([lat, lon]).addTo(map);
+
+  // Set the icon as a custom image
+  marker.setIcon(L.icon({
+    iconUrl: imageUrl,
+    iconSize: [40, 40], // Adjust the size as needed
+    iconAnchor: [20, 20] // Center point of the icon
+  }));
+
+  // Rotate the marker using CSS
+  marker._icon.style.transform += ' rotate(-120deg)';
+</script>
+
+</body>
+</html>
+

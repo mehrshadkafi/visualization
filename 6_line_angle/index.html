@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Map with Points and Line</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 500px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+
+  var p0 = [44.7, -68];
+  var p1 = [44.9, -69];
+
+  var map = L.map('map').setView([44.8, -68.5], 8);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+  }).addTo(map);
+
+  var p0Marker = L.circle(p0, {
+    color: 'red',
+    fillColor: 'red',
+    fillOpacity: 0.5,
+    radius: 1000 // Adjust the radius of the circle marker
+  }).addTo(map);
+
+  var p1Marker = L.circle(p1, {
+    color: 'blue',
+    fillColor: 'blue',
+    fillOpacity: 0.5,
+    radius: 1000 // Adjust the radius of the circle marker
+  }).addTo(map);
+
+  var line = L.polyline([p0, p1], {color: 'green'}).addTo(map);
+
+  var angle = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]) * 180 / Math.PI;
+  if (angle < 0) {
+    angle += 360;
+  }
+
+  L.control.custom({
+    position: 'topright',
+    content : `<div style="background-color: white; padding: 10px;">Angle: ${angle.toFixed(2)}°</div>`
+  }).addTo(map);
+
+</script>
+
+</body>
+</html>
+

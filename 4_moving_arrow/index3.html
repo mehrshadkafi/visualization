@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Map with Arrow Animation</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+    #playBtn {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+<button id="playBtn">Play</button>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+  const p0 = [44.7, -68];
+  const p1 = [44.9, -69];
+
+  const map = L.map('map').setView(p0, 8);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  const p0Marker = L.marker(p0, { icon: redIcon }).addTo(map);
+  const p1Marker = L.marker(p1, { icon: blueIcon }).addTo(map);
+
+  const line = L.polyline([p0, p1], { color: 'black' }).addTo(map);
+
+  const redIcon = L.icon({
+    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  const blueIcon = L.icon({
+    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  const arrowIcon = L.icon({
+    iconUrl: '/home/mehr/Desktop/geo_generators_visualization/js/3_custom_arrow/arrow1.png',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+
+  const arrowMarker = L.marker(p0, { icon: arrowIcon }).addTo(map);
+
+  document.getElementById('playBtn').addEventListener('click', () => {
+    animateArrow();
+  });
+
+  function animateArrow() {
+    const arrowPos = p0.slice();
+    const dx = p1[0] - p0[0];
+    const dy = p1[1] - p0[1];
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+    arrowMarker.setRotationAngle(angle);
+    const animation = setInterval(() => {
+      arrowPos[0] += dx / 100;
+      arrowPos[1] += dy / 100;
+      arrowMarker.setLatLng(arrowPos);
+      if (arrowPos[0] >= p1[0] && arrowPos[1] >= p1[1]) {
+        clearInterval(animation);
+      }
+    }, 50);
+  }
+</script>
+
+</body>
+</html>
+

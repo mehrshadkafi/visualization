@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Map with Arrow Rotation and Animation</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    #map { height: 500px; }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+<button id="playButton">Play</button>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+  // Coordinates
+  const p0 = [44.7, -68];
+  const p1 = [44.9, -69];
+
+  // Initialize map
+  const map = L.map('map').setView([44.8, -68.5], 9);
+
+  // Add tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+  }).addTo(map);
+
+  // Create markers
+  const markerP0 = L.marker(p0, { icon: L.divIcon({ className: 'red-marker' }) }).addTo(map);
+  const markerP1 = L.marker(p1, { icon: L.divIcon({ className: 'blue-marker' }) }).addTo(map);
+
+  // Draw line between markers
+  const line = L.polyline([p0, p1], { color: 'black' }).addTo(map);
+
+  // Create arrow icon with initial rotation
+  const arrowIcon = L.icon({
+    iconUrl: '/home/mehr/Desktop/geo_generators_visualization/js/3_custom_arrow/arrow1.png',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    className: 'arrow-icon'
+  });
+
+  // Add arrow marker at p0 with initial rotation
+  const arrowMarker = L.marker(p0, { icon: arrowIcon }).addTo(map);
+
+  // Function to calculate bearing between two points
+  function calculateBearing(p0, p1) {
+    const lat1 = p0[0] * (Math.PI / 180);
+    const lon1 = p0[1] * (Math.PI / 180);
+    const lat2 = p1[0] * (Math.PI / 180);
+    const lon2 = p1[1] * (Math.PI / 180);
+
+    const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+    let angle = Math.atan2(y, x) * (180 / Math.PI);
+
+    if (angle < 0) {
+      angle += 360;
+    }
+
+    return angle;
+  }
+
+  // Function to animate arrow from p0 to p1
+  function animateArrow() {
+    const initialRotation = calculateBearing(p0, p1);
+    arrowMarker.setIcon(L.icon({
+      iconUrl: '/home/mehr/Desktop/geo_generators_visualization/js/3_custom_arrow/arrow1.png',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      className: 'arrow-icon',
+      rotationAngle: initialRotation
+    }));
+
+    arrowMarker.setLatLng(p0); // Set arrow to start position
+
+    const steps = 100; // Number of steps for animation
+    const latStep = (p1[0] - p0[0]) / steps;
+    const lonStep = (p1[1] - p0[1]) / steps;
+
+    let currentStep = 0;
+    const animation = setInterval(() => {
+      if (currentStep === steps) {
+        clearInterval(animation);
+      } else {
+        const newLat = p0[0] + latStep * currentStep;
+        const newLon = p0[1] + lonStep * currentStep;
+        arrowMarker.setLatLng([newLat, newLon]);
+        currentStep++;
+      }
+    }, 50); // Change this value to control animation speed
+  }
+
+  // Play button click event
+  document.getElementById('playButton').addEventListener('click', animateArrow);
+</script>
+
+</body>
+</html>
+
