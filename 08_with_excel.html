@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Geographical Map with Custom Image Marker</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  <!-- Leaflet Icon Angle Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.js"></script>
+
+  <!-- SheetJS Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<input type="file" id="input" /> <!-- File input to upload the Excel file -->
+
+<div id="map" style="height: 500px;"></div>
+<div id="angleDisplay"></div>
+
+<script>
+  var map;
+  var initialMarker;
+  var finalMarker;
+  var marker;
+  var initialLat = 44; // Placeholder values
+  var initialLon = -68; // Placeholder values
+  var finalLat = 44.5; // Placeholder values
+  var finalLon = -69; // Placeholder values
+  var steps = 100; // Number of steps for the animation
+  var stepIndex = 0;
+  var loopCounter = 0;
+  var forward = true; // Movement direction flag
+
+  function initMap() {
+    map = L.map('map').setView([initialLat, initialLon], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var imageUrl = '/home/mehr/Desktop/geo_generators_visualization/js/3_custom_arrow/arrow1.png';
+
+    initialMarker = L.circleMarker([initialLat, initialLon], {
+      color: 'blue',
+      fillColor: 'blue',
+      fillOpacity: 1,
+      radius: 8
+    }).addTo(map);
+
+    finalMarker = L.circleMarker([finalLat, finalLon], {
+      color: 'red',
+      fillColor: 'red',
+      fillOpacity: 1,
+      radius: 8
+    }).addTo(map);
+
+    var polyline = L.polyline([
+      [initialLat, initialLon],
+      [finalLat, finalLon]
+    ], { color: 'blue' }).addTo(map);
+
+    marker = L.marker([initialLat, initialLon], {
+      icon: L.icon({
+        iconUrl: imageUrl,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+      }),
+      rotationAngle: calculateAngle(initialLat, initialLon, finalLat, finalLon)
+    }).addTo(map);
+
+    // Display the angle
+    var angle = calculateAngle(initialLat, initialLon, finalLat, finalLon);
+    document.getElementById('angleDisplay').innerText = 'Angle: ' + angle.toFixed(2) + ' degrees';
+
+    moveMarker(); // Start moving the marker
+  }
+
+  function readExcelFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var data = new Uint8Array(e.target.result);
+      var workbook = XLSX.read(data, { type: 'array' });
+      var sheetName = workbook.SheetNames[4]; // Considering 'lineflows' as the 5th sheet
+
+      // Accessing the sheet
+      var worksheet = workbook.Sheets[sheetName];
+
+      // Extracting values from specific cells
+      initialLat = worksheet['J2'] ? worksheet['J2'].v : 44; // Default value 44 if cell is empty
+      initialLon = worksheet['K2'] ? worksheet['K2'].v : -68; // Default value -68 if cell is empty
+      finalLat = worksheet['S2'] ? worksheet['S2'].v : 44.5; // Default value 44.5 if cell is empty
+      finalLon = worksheet['T2'] ? worksheet['T2'].v : -69; // Default value -69 if cell is empty
+
+      // Call initMap with extracted values
+      initMap();
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function handleFileSelect(evt) {
+    var files = evt.target.files; // FileList object
+
+    // Use the first file from the list
+    var file = files[0];
+    readExcelFile(file);
+  }
+
+  document.getElementById('input').addEventListener('change', handleFileSelect, false);
+
+  function moveMarker() {
+    var latStep = forward ? (finalLat - initialLat) / steps : (initialLat - finalLat) / steps;
+    var lonStep = forward ? (finalLon - initialLon) / steps : (initialLon - finalLon) / steps;
+
+    var moveInterval = setInterval(function () {
+      if (stepIndex >= steps) {
+        clearInterval(moveInterval);
+        stepIndex = 0; // Reset the step index
+        loopCounter++;
+
+        moveMarker(); // Recursive call to move marker continuously
+        return;
+      }
+
+      var newLat = forward ? (initialLat + latStep * stepIndex) : (finalLat + latStep * stepIndex);
+      var newLon = forward ? (initialLon + lonStep * stepIndex) : (finalLon + lonStep * stepIndex);
+
+      marker.setLatLng([newLat, newLon]);
+      marker.setRotationAngle(calculateAngle(newLat, newLon, finalLat, finalLon));
+      marker.update();
+      map.panTo([newLat, newLon]);
+
+      stepIndex++;
+    }, 50);
+  }
+
+  function calculateAngle(lat1, lon1, lat2, lon2) {
+    var angle = -Math.atan2(lat2 - lat1, lon2 - lon1) * (180 / Math.PI);
+    return angle >= 0 ? angle : (360 + angle); // Convert angle to positive value
+  }
+
+</script>
+
+</body>
+</html>
+

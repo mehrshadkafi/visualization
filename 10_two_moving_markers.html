@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Geographical Map with Custom Image Marker</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  <!-- Leaflet Icon Angle Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.js"></script>
+</head>
+<body>
+
+<div id="map" style="height: 500px;"></div>
+<div id="angleDisplay"></div>
+
+<script>
+  var map;
+  var markers = [];
+  var initialLat1 = 44;
+  var initialLon1 = -68;
+  var finalLat1 = 44.5;
+  var finalLon1 = -69;
+  var initialLat2 = 44.2;
+  var initialLon2 = -69;
+  var finalLat2 = 44.3;
+  var finalLon2 = -70;
+  var steps = 100; // Number of steps for the animation
+  var stepIndex = 0;
+  var loopCounter = 0;
+  var forward = true; // Movement direction flag
+
+  function initMap() {
+    map = L.map('map').setView([initialLat1, initialLon1], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var imageUrl = '/home/mehr/Desktop/geo_generators_visualization/js/3_custom_arrow/arrow1.png';
+
+    addMarker(initialLat1, initialLon1, finalLat1, finalLon1, 'blue', imageUrl);
+    addMarker(initialLat2, initialLon2, finalLat2, finalLon2, 'red', imageUrl);
+
+    moveMarkers(); // Start moving the markers
+  }
+
+  function addMarker(initialLat, initialLon, finalLat, finalLon, color, imageUrl) {
+    var initialMarker = L.circleMarker([initialLat, initialLon], {
+      color: color,
+      fillColor: color,
+      fillOpacity: 1,
+      radius: 8
+    }).addTo(map);
+
+    var finalMarker = L.circleMarker([finalLat, finalLon], {
+      color: color,
+      fillColor: color,
+      fillOpacity: 1,
+      radius: 8
+    }).addTo(map);
+
+    var polyline = L.polyline([
+      [initialLat, initialLon],
+      [finalLat, finalLon]
+    ], { color: color }).addTo(map);
+
+    var marker = L.marker([initialLat, initialLon], {
+      icon: L.icon({
+        iconUrl: imageUrl,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+      }),
+      rotationAngle: calculateAngle(initialLat, initialLon, finalLat, finalLon)
+    }).addTo(map);
+
+    markers.push({
+      marker: marker,
+      finalLat: finalLat,
+      finalLon: finalLon
+    });
+
+    // Display the angle
+    var angle = calculateAngle(initialLat, initialLon, finalLat, finalLon);
+    document.getElementById('angleDisplay').innerText += 'Angle: ' + angle.toFixed(2) + ' degrees<br>';
+  }
+
+  function moveMarkers() {
+    markers.forEach(function (item) {
+      var latStep = (item.finalLat - item.marker.getLatLng().lat) / steps;
+      var lonStep = (item.finalLon - item.marker.getLatLng().lng) / steps;
+
+      var moveInterval = setInterval(function () {
+        if (stepIndex >= steps) {
+          clearInterval(moveInterval);
+          stepIndex = 0; // Reset the step index
+          loopCounter++;
+
+          // Swap initial and final positions
+          var tempLat = item.finalLat;
+          var tempLon = item.finalLon;
+          item.finalLat = item.marker.getLatLng().lat;
+          item.finalLon = item.marker.getLatLng().lng;
+          item.marker.setRotationAngle(calculateAngle(item.finalLat, item.finalLon, item.finalLat, item.finalLon));
+
+          item.marker.setLatLng([tempLat, tempLon]); // Move marker back to initial position
+
+          moveMarkers(); // Recursive call to move markers continuously
+          return;
+        }
+
+        var newLat = item.marker.getLatLng().lat + latStep;
+        var newLon = item.marker.getLatLng().lng + lonStep;
+
+        item.marker.setLatLng([newLat, newLon]);
+        item.marker.setRotationAngle(calculateAngle(newLat, newLon, item.finalLat, item.finalLon));
+        item.marker.update();
+        map.panTo([newLat, newLon]);
+
+        stepIndex++;
+      }, 50);
+    });
+  }
+
+  function calculateAngle(lat1, lon1, lat2, lon2) {
+    var angle = -Math.atan2(lat2 - lat1, lon2 - lon1) * (180 / Math.PI);
+    return angle >= 0 ? angle : (360 + angle); // Convert angle to positive value
+  }
+
+  initMap();
+</script>
+
+</body>
+</html>
+

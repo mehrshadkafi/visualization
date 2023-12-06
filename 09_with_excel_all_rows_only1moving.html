@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Geographical Map with Custom Image Marker</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  <!-- Leaflet Icon Angle Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.js"></script>
+
+  <!-- SheetJS Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<input type="file" id="input" /> <!-- File input to upload the Excel file -->
+
+<div id="map" style="height: 500px;"></div> <!-- Map container -->
+<div id="angleDisplay"></div> <!-- Display angle information -->
+
+<script>
+  var map; // Variable to hold the map object
+  var initialMarker; // Initial marker on the map
+  var finalMarker; // Final marker on the map
+  var marker; // Moving marker on the map
+  var initialLat = 34; // Placeholder values for initial latitude
+  var initialLon = -68; // Placeholder values for initial longitude
+  var finalLat = 44.5; // Placeholder values for final latitude
+  var finalLon = -69; // Placeholder values for final longitude
+  var steps = 100; // Number of steps for the animation
+  var stepIndex = 0; // Current step index in animation
+  var loopCounter = 0; // Counter for looped animation
+  var forward = true; // Movement direction flag
+
+  // Function to initialize the map
+  function initMap() {
+    map = L.map('map').setView([initialLat, initialLon], 10); // Initialize Leaflet map
+
+    // Add OpenStreetMap tiles to the map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var imageUrl = '/home/mehr/Desktop/geo_generators_visualization/js/3_custom_arrow/arrow1.png';
+
+    // Create initial and final markers, a line between them, and a moving marker
+    initialMarker = L.circleMarker([initialLat, initialLon], {
+      color: 'blue',
+      fillColor: 'blue',
+      fillOpacity: 1,
+      radius: 8
+    }).addTo(map);
+
+    finalMarker = L.circleMarker([finalLat, finalLon], {
+      color: 'red',
+      fillColor: 'red',
+      fillOpacity: 1,
+      radius: 8
+    }).addTo(map);
+
+    var polyline = L.polyline([
+      [initialLat, initialLon],
+      [finalLat, finalLon]
+    ], { color: 'blue' }).addTo(map);
+
+    marker = L.marker([initialLat, initialLon], {
+      icon: L.icon({
+        iconUrl: imageUrl,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+      }),
+      rotationAngle: calculateAngle(initialLat, initialLon, finalLat, finalLon)
+    }).addTo(map);
+
+    // Display the angle between initial and final points
+    var angle = calculateAngle(initialLat, initialLon, finalLat, finalLon);
+    document.getElementById('angleDisplay').innerText = 'Angle: ' + angle.toFixed(2) + ' degrees';
+
+    moveMarker(); // Start moving the marker
+  }
+
+  // Function to read data from an uploaded Excel file
+  function readExcelFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var data = new Uint8Array(e.target.result);
+      var workbook = XLSX.read(data, { type: 'array' });
+      var sheetName = workbook.SheetNames[4]; // Considering 'lineflows' as the 5th sheet
+
+      // Accessing the sheet and extracting specific cell values
+      var worksheet = workbook.Sheets[sheetName];
+
+      initialLat = worksheet['J2'] ? worksheet['J2'].v : 44; // Default value 44 if cell is empty
+      initialLon = worksheet['K2'] ? worksheet['K2'].v : -68; // Default value -68 if cell is empty
+      finalLat = worksheet['S2'] ? worksheet['S2'].v : 44.5; // Default value 44.5 if cell is empty
+      finalLon = worksheet['T2'] ? worksheet['T2'].v : -69; // Default value -69 if cell is empty
+
+      // Call initMap with extracted values from the Excel file
+      initMap();
+
+      // Create additional markers and lines based on row 3 data
+      var initialLatRow3 = worksheet['J3'] ? worksheet['J3'].v : 45; // Default value 45 if cell is empty
+      var initialLonRow3 = worksheet['K3'] ? worksheet['K3'].v : -69; // Default value -69 if cell is empty
+      var finalLatRow3 = worksheet['S3'] ? worksheet['S3'].v : 45.5; // Default value 45.5 if cell is empty
+      var finalLonRow3 = worksheet['T3'] ? worksheet['T3'].v : -70; // Default value -70 if cell is empty
+
+     // Create markers, lines, and display row 3 data on the map
+      var initialMarkerRow3 = L.circleMarker([initialLatRow3, initialLonRow3], {
+        color: 'green',
+        fillColor: 'green',
+        fillOpacity: 1,
+        radius: 8
+      }).addTo(map);
+
+      var finalMarkerRow3 = L.circleMarker([finalLatRow3, finalLonRow3], {
+        color: 'orange',
+        fillColor: 'orange',
+        fillOpacity: 1,
+        radius: 8
+      }).addTo(map);
+
+      var polylineRow3 = L.polyline([
+        [initialLatRow3, initialLonRow3],
+        [finalLatRow3, finalLonRow3]
+      ], { color: 'green' }).addTo(map);
+      
+
+
+
+
+   
+    
+      
+      
+      
+    };
+    reader.readAsArrayBuffer(file); // Read the file as an array buffer
+  }
+
+  // Event listener for file input change
+  document.getElementById('input').addEventListener('change', function(evt) {
+    var files = evt.target.files; // FileList object
+    var file = files[0]; // Use the first file from the list
+    readExcelFile(file); // Call function to read the Excel file
+  }, false);
+
+  // Function to animate the marker's movement
+  function moveMarker() {
+    var latStep = forward ? (finalLat - initialLat) / steps : (initialLat - finalLat) / steps;
+    var lonStep = forward ? (finalLon - initialLon) / steps : (initialLon - finalLon) / steps;
+
+    var moveInterval = setInterval(function () {
+      if (stepIndex >= steps) {
+        clearInterval(moveInterval); // Clear the interval when movement completes
+        stepIndex = 0; // Reset the step index
+        loopCounter++;
+        moveMarker(); // Recursive call to continue marker movement
+        return;
+      }
+
+      // Calculate new marker position
+      var newLat = forward ? (initialLat + latStep * stepIndex) : (finalLat + latStep * stepIndex);
+      var newLon = forward ? (initialLon + lonStep * stepIndex) : (finalLon + lonStep * stepIndex);
+
+      marker.setLatLng([newLat, newLon]); // Update marker position
+      marker.setRotationAngle(calculateAngle(newLat, newLon, finalLat, finalLon)); // Set marker rotation angle
+      marker.update(); // Update marker
+      map.panTo([newLat, newLon]); // Pan map to new marker position
+
+      stepIndex++; // Increment step index
+    }, 50); // Interval for marker movement
+  }
+
+  // Function to calculate angle between two points
+  function calculateAngle(lat1, lon1, lat2, lon2) {
+    var angle = -Math.atan2(lat2 - lat1, lon2 - lon1) * (180 / Math.PI);
+    return angle >= 0 ? angle : (360 + angle); // Convert angle to positive value
+  }
+
+</script>
+
+</body>
+</html>
+
